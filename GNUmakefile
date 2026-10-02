@@ -36,7 +36,7 @@ ragel: $(ext)/unicorn_http.c
 rl_files := $(wildcard $(ext)/*.rl)
 ragel: $(ext)/unicorn_http.c
 $(ext)/unicorn_http.c: $(rl_files)
-	cd $(@D) && $(RAGEL) unicorn_http.rl -C $(RLFLAGS) -o $(@F)
+	cd $(@D) && $(RAGEL) unicorn_http.rl $(RLFLAGS) -o $(@F)
 ext_pfx := test/$(RUBY_ENGINE)-$(RUBY_VERSION)
 tmp_bin := $(ext_pfx)/bin
 ext_h := $(wildcard $(ext)/*/*.h $(ext)/*.h)
