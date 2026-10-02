@@ -59,17 +59,28 @@ module Unicorn::Util # :nodoc:
         # Fwiw, GVL has zero bearing here.  This is tricky because of
         # the unavoidable existence of stdio FILE * pointers for
         # std{in,out,err} in all programs which may use the standard C library
+        # Ruby 4.0+ returns nil for external_encoding on write-mode IOs
+        # unless an encoding is explicitly specified. Reopening with a plain
+        # "a" mode would lose the original encoding, so preserve it here.
+        mode = "a"
+        if (ext = fp.external_encoding)
+          mode << ":#{ext.to_s}"
+          if (int = fp.internal_encoding)
+            mode << ":#{int.to_s}"
+          end
+        end
+
         if fp.fileno <= 2
           # We do not want to hit fclose(3)->dup(2) window for std{in,out,err}
           # MRI will use freopen(3) here internally on std{in,out,err}
-          fp.reopen(fp.path, "a")
+          fp.reopen(fp.path, mode)
         else
           # We should not need this workaround, Ruby can be fixed:
           #    https://bugs.ruby-lang.org/issues/9036
           # MRI will not call call fclose(3) or freopen(3) here
           # since there's no associated std{in,out,err} FILE * pointer
           # This should atomically use dup3(2) (or dup2(2)) syscall
-          File.open(fp.path, "a") { |tmpfp| fp.reopen(tmpfp) }
+          File.open(fp.path, mode) { |tmpfp| fp.reopen(tmpfp) }
         end
 
         fp.sync = true
